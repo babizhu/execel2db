@@ -13,16 +13,20 @@ import java.util.List;
  */
 public class Launcher{
     public static void main( String[] args ) throws IOException, InvalidFormatException{
-        String excelFilePath = "/home/liulaoye/文档/驴妈妈/201601模板.xlsx";
+        String excelFilePath = "excel.xlsx";
+        if( args.length > 0 ) {
+            excelFilePath = args[0];
+        }
+
+        System.out.println( "读取的excel文件为：" + excelFilePath );
         List<ExcelData> excelDatas = new ExcelReader( excelFilePath ).read();
-        System.out.println( excelDatas );
-//
+//        System.out.println( excelDatas );
+////
         final SqlServer db = new SqlServer();
-//
-        final List<String> sqls = db.parseSql( excelDatas );
-        db.printSql( sqls );
-        System.out.println();
-//        db.run(sqls);
+////
+        db.parseSql( excelDatas );
+        db.printSql();
+        db.run();
 //        db.run(sqls);
 
 //

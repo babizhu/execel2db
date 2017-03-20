@@ -1,11 +1,9 @@
 package com.srxk.lmm.db;
 
-import com.alibaba.druid.util.JdbcUtils;
 import com.srxk.lmm.pojo.ExcelData;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -16,24 +14,24 @@ import java.util.List;
  */
 public class SqlServer{
 
-    public List<String> parseSql( List<ExcelData> datas ){
+    private List<String> sqls;
+
+    public void parseSql( List<ExcelData> datas ){
         /*
           一个excel行会产生8条sql语句，10行excel则会产生80条sql语句，都线性保存到sqls中
           也就是说，生产sql的时候每8条sql语句要执行一个事物
          */
-        List<String> sqls = new ArrayList<>();
+        sqls = new ArrayList<>();
 
         for( ExcelData data : datas ) {
             sqls.add( buildFitemss00Sql( data ) );
             sqls.addAll( buildAccvouchSql( data ) );
         }
-
-        return sqls;
     }
 
-    public void printSql( List<String> sqls ){
+    public void printSql(){
         System.out.println( "生成的sql语句如下:" );
-        int index = 0;
+        int index = 1;
         for( String sql : sqls ) {
             System.out.println( sql );
             if( index++ % 8 == 0 ) {
@@ -60,7 +58,7 @@ public class SqlServer{
                 "      doutbilldate, coutsign, " +
                 "      bvouchedit, bvouchAddordele, bvouchmoneyhold, " +
                 "      bvalueedit, bcodeedit, ccodecontrol, bPCSedit, bDeptedit, bItemedit, bCusSupInput, " +
-                "      cDefine10)\n" +
+                "      cDefine10) " +
                 "VALUES (1,'记',1,%d,%d,'%s',-1,'%s',0," +
                 "'%s'," +
                 "'%s',%f,%f,0,0,0,0,0," +
@@ -177,31 +175,27 @@ public class SqlServer{
 
     /**
      * 运行传入的sql语句
-     *
-     * @param sqls
      */
-    public void run( List<String> sqls ){
+    public void run(){
 
-        String sql = "select 1";
-        PreparedStatement pst = null;
-//        String sql = "insert into Rainfall ( Timestamps,ClientId,RainfallAmount,CreateTime ) values ( ?,?,?,? )";
-        Connection con = DatabaseUtil.INSTANCE.getConnection();
+        for( String sql : sqls ) {
+            PreparedStatement pst = null;
+            Connection con = DatabaseUtil.INSTANCE.getConnection();
 
-        try {
-            pst = con.prepareStatement( sql );
+            try {
+                pst = con.prepareStatement( sql );
 
-//            pst.executeUpdate();
+                pst.executeUpdate();
 
-            ResultSet rs = pst.executeQuery();
-            JdbcUtils.printResultSet( rs );
-//            JdbcUtils.printResultSet(  );
 
-        } catch( SQLException e ) {
-            e.printStackTrace();
-        } finally {
+            } catch( SQLException e ) {
+                e.printStackTrace();
+            } finally {
 
-            DatabaseUtil.INSTANCE.close( null, pst, con );
+                DatabaseUtil.INSTANCE.close( null, pst, con );
 //            DatabaseUtil.INSTANCE.close( null, pst, con );
+            }
         }
+
     }
 }

@@ -27,7 +27,7 @@ public class ExcelReader{
         List<ExcelData> rs = new ArrayList<>();
         int rowNumber = 0;
         for( Row cells : sheet ) {
-            System.out.println( cells.getCell( 0 ));
+//            System.out.println( cells.getCell( 0 ));
             if( rowNumber++ > 1 && cells.getCell( 0 ) != null ) {
 
                 ExcelData data = new ExcelData();
