@@ -15,7 +15,7 @@ public class ExcelReader{
     private final Sheet sheet;
 
     public ExcelReader( String excelFilePath ) throws IOException, InvalidFormatException{
-        File file = new File( "/home/liulaoye/文档/驴妈妈/201601模板.xlsx" );
+        File file = new File( excelFilePath );
         InputStream is = new FileInputStream( file );
         Workbook wb = WorkbookFactory.create( is );
 //        System.out.println( wb.getActiveSheetIndex() );

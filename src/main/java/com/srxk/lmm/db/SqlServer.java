@@ -4,6 +4,7 @@ import com.srxk.lmm.pojo.ExcelData;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.List;
 
 /**
  * Created by liulaoye on 17-3-20.
+ *
  */
 public class SqlServer{
 
@@ -71,9 +73,13 @@ public class SqlServer{
 
 
         //处理第一条分录
-        int inoId = 1000;//自增，对应凭证的 记 。一个项目下所有的分录公用一个ino_id
+        int inoId = getMaxInoId();//自增，对应凭证的 记 。一个项目下所有的分录公用一个ino_id
+        System.out.println( "inoId is " + inoId );
 
-        /*************************************  分录1  *************************************/
+        //查询供应商id
+        String supplyId = this.getSupplierIdFromName( data.getSupplier() ) + "";
+
+        /**********************************  分录1  *************************************/
         String sql = String.format( sqlFormat,
                 inoId, 1, formatter.format( data.getCreateTime() ), data.getCreater(),
                 "确认" + data.getBu() + "线上项目《" + data.getItemCode() + "》收入",
@@ -85,7 +91,7 @@ public class SqlServer{
         );
         accvouchSqls.add( sql );
 
-        /*************************************  分录2  *************************************/
+        /************************************  分录2  *************************************/
         sql = String.format( sqlFormat,
                 inoId, 2, formatter.format( data.getCreateTime() ), data.getCreater(),
                 "确认" + data.getBu() + "线上项目《" + data.getItemCode() + "》收入",
@@ -121,7 +127,7 @@ public class SqlServer{
         );
         accvouchSqls.add( sql );
 
-        /*************************************  分录5  *************************************/
+        /************************************  分录5  *************************************/
         sql = String.format( sqlFormat,
                 inoId, 5, formatter.format( data.getCreateTime() ), data.getCreater(),
                 "确认" + data.getBu() + "线上项目《" + data.getItemCode() + "》成本",
@@ -145,7 +151,7 @@ public class SqlServer{
         );
         accvouchSqls.add( sql );
 
-        String supplyId = "10011";//供应商id
+
         /*************************************  分录7  *************************************/
         sql = String.format( sqlFormat,
                 inoId, 7, formatter.format( data.getCreateTime() ), data.getCreater(),
@@ -173,29 +179,110 @@ public class SqlServer{
                 ")";
     }
 
+    private int getMaxInoId(){
+        PreparedStatement pst = null;
+        ResultSet rs = null;
+        Connection con = DatabaseUtil.INSTANCE.getConnection();
+        String sql = "SELECT TOP 1 ino_id FROM GL_accvouch ORDER BY ino_id DESC";
+        try {
+            pst = con.prepareStatement( sql );
+
+            rs = pst.executeQuery();
+//            JdbcUtils.printResultSet(rs);
+            while( rs.next() ) {
+                return rs.getInt( 1 );
+            }
+            return 1;
+
+        } catch( SQLException e ) {
+            e.printStackTrace();
+        } finally {
+
+            DatabaseUtil.INSTANCE.close( rs, pst, con );
+        }
+        return -1;
+
+    }
+
+    /**
+     * 查取供应商id
+     *
+     * @param supplierName
+     * @return
+     */
+    private int getSupplierIdFromName( String supplierName ){
+        PreparedStatement pst = null;
+        ResultSet rs = null;
+        Connection con = DatabaseUtil.INSTANCE.getConnection();
+        String sql = "SELECT TOP 1 id FROM supplier ORDER BY ino_id DESC";
+        try {
+            pst = con.prepareStatement( sql );
+            rs = pst.executeQuery();
+
+            while( rs.next() ) {
+                return rs.getInt( 1 );
+            }
+
+        } catch( SQLException e ) {
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.INSTANCE.close( rs, pst, con );
+        }
+        return -1;
+    }
+
     /**
      * 运行传入的sql语句
      */
     public void run(){
+        List<String> excelRowSql = new ArrayList<>(  );
 
+        int index = 1;
         for( String sql : sqls ) {
-            PreparedStatement pst = null;
-            Connection con = DatabaseUtil.INSTANCE.getConnection();
-
-            try {
-                pst = con.prepareStatement( sql );
-
-                pst.executeUpdate();
-
-
-            } catch( SQLException e ) {
-                e.printStackTrace();
-            } finally {
-
-                DatabaseUtil.INSTANCE.close( null, pst, con );
-//            DatabaseUtil.INSTANCE.close( null, pst, con );
+            excelRowSql.add( sql );
+            if( index++ % 8 == 0){
+                run( excelRowSql );
+                excelRowSql.clear();
             }
         }
 
+    }
+
+    /**
+     * 采用事物的方式处理一行excel数据
+     *
+     * @param excelRowSql   一行excel数据所需要的8条sql语句
+     */
+    private void run( List<String> excelRowSql ){
+        System.out.println( "开始执行sql写入" + excelRowSql);
+        System.out.println();
+        Connection con = DatabaseUtil.INSTANCE.getConnection();
+        PreparedStatement pst = null;
+        try {
+            con.setAutoCommit( false );
+            for( String sql : excelRowSql ) {
+                pst = con.prepareStatement( sql );
+                pst.executeUpdate();
+                break;//测试环境，仅仅执行第一条语句
+            }
+            con.commit();
+
+        } catch( SQLException e ) {
+            e.printStackTrace();
+            try {
+                con.rollback();
+            } catch( SQLException e1 ) {
+                e1.printStackTrace();
+            }
+        } finally {
+            try {
+                con.setAutoCommit(true);//设置事务提交方式为自动提交：
+
+            } catch (SQLException e) {
+               e.printStackTrace();
+            }
+
+            DatabaseUtil.INSTANCE.close( null, pst, con );
+        }
     }
 }
