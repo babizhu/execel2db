@@ -1,6 +1,6 @@
 package com.srxk.lmm.excel;
 
-import com.srxk.lmm.pojo.ExcelData;
+import com.srxk.lmm.pojo.ExcelDataWithYingshou;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -16,11 +16,12 @@ import java.util.List;
 
 /**
  * Created by liulaoye on 17-3-17.
+ * 读取应收excel
  */
-public class ExcelReader{
-    final Sheet sheet;
+public class ExcelReaderWithYingshou{
+    private final Sheet sheet;
 
-    public ExcelReader( String excelFilePath ) throws IOException, InvalidFormatException{
+    public ExcelReaderWithYingshou( String excelFilePath ) throws IOException, InvalidFormatException{
         File file = new File( excelFilePath );
         InputStream is = new FileInputStream( file );
         Workbook wb = WorkbookFactory.create( is );
@@ -28,18 +29,34 @@ public class ExcelReader{
         sheet = wb.getSheetAt( 0 );
     }
 
+//    public ExcelReaderWithYingshou( String excelFilePath ) throws IOException, InvalidFormatException{
+//        File file = new File( excelFilePath );
+//        InputStream is = new FileInputStream( file );
+//        Workbook wb = WorkbookFactory.create( is );
+////        System.out.println( wb.getActiveSheetIndex() );
+//        sheet = wb.getSheetAt( 0 );
+//    }
 
-    public List<ExcelData> read(){
-        List<ExcelData> rs = new ArrayList<>();
+
+
+//    public ExcelDataWithYingshou readRow(Row cells){
+////        ExcelData data = super.readRow( cells );
+//
+//
+//        return this.readRow( cells );
+//    }
+
+    public List<ExcelDataWithYingshou> read(){
+        List<ExcelDataWithYingshou> rs = new ArrayList<>();
         int rowNumber = 0;
         for( Row cells : sheet ) {
 //            System.out.println( cells.getCell( 0 ));
             if( rowNumber++ > 1 && cells.getCell( 0 ) != null ) {
 
-                ExcelData data = readRow( cells );
 
 
-                rs.add( data );
+
+                rs.add( readRow( cells ) );
             }
         }
         return rs;
@@ -55,9 +72,8 @@ public class ExcelReader{
 //            System.out.println();
 
     }
-
-    ExcelData readRow( Row cells ){
-        ExcelData data = new ExcelData();
+    ExcelDataWithYingshou readRow( Row cells ){
+        ExcelDataWithYingshou data = new ExcelDataWithYingshou();
         if( cells.getCell( 0 ) != null ) {
             data.setId( (int) cells.getCell( 0 ).getNumericCellValue() );
         }
@@ -116,7 +132,9 @@ public class ExcelReader{
         if( cells.getCell( 29 ) != null ) {
             data.setSupplier1( cells.getCell( 29 ).getStringCellValue() );
         }
+        if( cells.getCell( 30 ) != null ) {
+            data.setSummary( cells.getCell( 30 ).getStringCellValue() );
+        }
         return data;
     }
-
 }

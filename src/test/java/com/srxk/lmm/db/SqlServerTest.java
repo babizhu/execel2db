@@ -31,6 +31,12 @@ public class SqlServerTest{
         }
     }
 
+    @Test
+    public void abc(){
+        float a= 0.0000f;
+        System.out.println( a == 0 );
+
+    }
     private void run( List<Integer> excelRowSql ){
         System.out.println(excelRowSql);
     }

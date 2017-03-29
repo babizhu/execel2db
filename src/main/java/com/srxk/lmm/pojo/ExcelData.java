@@ -12,72 +12,81 @@ import java.util.Date;
 
 @Data
 public class ExcelData{
-    private int id;
+     int id;
     /**
      * 所属BU
      */
-    private String bu;
+     String bu;
     /**
      * 订单号
      */
-    private int orderId;
+     String  orderId;
     /**
      * 业务员
      */
-    private String salesman;
+     String salesman;
 
     /**
      * 产品名称
      */
-    private String productName;
+     String productName;
 
     /**
      * 总部结算价
      */
-    private double settlementPrice;
+     double settlementPrice;
 
     /**
      * 佣金
      */
-    private double commission;
+     double commission;
 
 
     /**
      * 供应商结算价
      */
-    private double settlementPrice1;
+     double settlementPrice1;
 
     /**
      * 专线返点
      */
-    private double rebate;
+     double rebate;
 
 
     /**
      * 应付供应商金额
      */
-    private double payables;
+     double payables;
 
     /**
      * 供应商
      */
-    private String Supplier;
+     String Supplier;
 
     /**
      * 出游时间
      */
-    private Date playTime;
+     Date playTime;
 
     /**
      * 制单时间
      */
-    private Date createTime;
+     Date createTime;
 
     /**
      * 制单人
      */
-    private String creater;
+     String creater;
 
+    /**
+     * 客户单位
+     */
+     String client;
+
+    /**
+     * 客户单位，用于总经办第八条分录
+     */
+     String Supplier1;
     /**
      * 获取项目编码 = 出游时间+产品名称
      *
@@ -85,16 +94,19 @@ public class ExcelData{
      */
     public String getItemCode(){
 
+        if( playTime == null ){
+            return "";
+        }
         Calendar cal = Calendar.getInstance();
         cal.setTime( playTime );
 
         int month = cal.get( Calendar.MONTH ) + 1;
         String monthStr = month > 10 ? month + "" : "0" + month;
 
-        int dayOfMonth = cal.get( Calendar.DAY_OF_MONTH ) + 1;
+        int dayOfMonth = cal.get( Calendar.DAY_OF_MONTH );
         String dayOfMonthStr = dayOfMonth > 10 ? dayOfMonth + "" : "0" + dayOfMonth;
 
-        String time = cal.get( Calendar.YEAR ) + monthStr + dayOfMonthStr;
+        String time = (cal.get( Calendar.YEAR ) -2000)+ monthStr + dayOfMonthStr;
         return time + this.productName;
     }
 

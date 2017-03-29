@@ -8,38 +8,129 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
  * Created by liulaoye on 17-3-20.
- *
  */
-public class SqlServer{
+public class SqlServer extends AbstractSqlServer{
 
-    private List<String> sqls;
 
     public void parseSql( List<ExcelData> datas ){
         /*
-          一个excel行会产生8条sql语句，10行excel则会产生80条sql语句，都线性保存到sqls中
-          也就是说，生产sql的时候每8条sql语句要执行一个事物
+          一个excel行会产生一个List<String>，都保存到sqls中
+          也就是说，所有的sql都要执行一个事物，要么整个excel数据全写入，要么全不写入
          */
-        sqls = new ArrayList<>();
 
+//        final boolean fitemss00Duplicate = isFitemss00Duplicate( datas );
+//        if( fitemss00Duplicate ) {
+//            System.exit( 0 );
+//        }
         for( ExcelData data : datas ) {
-            sqls.add( buildFitemss00Sql( data ) );
-            sqls.addAll( buildAccvouchSql( data ) );
+            List<String> rowExcelSql = new ArrayList<>();
+            rowExcelSql.add( buildFitemss00Sql( data ) );
+            rowExcelSql.addAll( buildAccvouchSql( data ) );
+            sqls.add( rowExcelSql );
         }
     }
 
-    public void printSql(){
-        System.out.println( "生成的sql语句如下:" );
-        int index = 1;
-        for( String sql : sqls ) {
-            System.out.println( sql );
-            if( index++ % 8 == 0 ) {
-                System.out.println( "===========================================" );
+
+
+    /**
+     * @param bu
+     * @return
+     */
+    private String[] getCcodeEqual( String bu ){
+        final String[] ccode = getCcode( bu );
+        String[] ret = new String[2];
+        switch( bu ) {
+            case "国内BU":
+                ret[0] = "60010301,60010302,2202";
+                ret[1] = "1122,64010301,64010302";
+                break;
+
+            case "门票BU":
+                ret[0] = "60010101,60010102,2202";
+                ret[1] = "1122,64010101,64010102";
+                break;
+            case "目的地BU":
+                ret[0] = "60010202,60010203,2202";
+                ret[1] = "1122,64010202,64010203";
+                break;
+            case "出境BU":
+                ret[0] = "60010402,2202";
+                ret[1] = "1122,64010402";
+                break;
+            case "总经办":
+                ret[0] = "6001060401,6001060402,2202";
+                ret[1] = "1122,6401060401,6401060402";
+                break;
+        }
+        return ret;
+    }
+
+    /**
+     * 摘要
+     *
+     * @param data
+     * @return
+     */
+    private String getSummary( ExcelData data, String ccode, boolean is0006 ){
+//        String[] ret = new String[2];
+        final String bu = data.getBu();
+        if( bu.equals( "国内BU" ) || bu.equals( "门票BU" ) || bu.equals( "目的地BU" ) ) {
+            if( ccode.equals( "1122" ) || ccode.startsWith( "6001" ) ) {
+                return "确认" + data.getBu() + "线上项目《" + data.getItemCode() + "》收入";
+            } else {
+                return "确认" + data.getBu() + "线上项目《" + data.getItemCode() + "》成本";
             }
         }
+        if(  bu.equals( "总经办" ) ) {
+            if( ccode.equals( "1122" ) || ccode.startsWith( "6001" ) ) {
+                return "确认" + data.getBu() + "线线下项目《" + data.getItemCode() + "》收入";
+            } else {
+                return "确认" + data.getBu() + "线下项目《" + data.getItemCode() + "》成本";
+            }
+        }
+        if( bu.equals( "出境BU" ) ) {
+
+            if( ccode.equals( "1122" ) ) {
+                if( is0006 ) {
+                    return "代供应商收上驴线上项目《" + data.getItemCode() + "》团款";
+                } else {
+                    return "确认" + data.getBu() + "线上项目《" + data.getItemCode() + "》反佣收入";
+                }
+
+            }
+            if( ccode.equals( "60010402" ) ) {
+                return "确认" + data.getBu() + "线上项目《" + data.getItemCode() + "》反佣收入";
+            }
+            if( ccode.equals( "64010402" ) ) {
+                return "确认" + data.getBu() + "线上项目《" + data.getItemCode() + "》反佣成本";
+            }
+            if( ccode.equals( "2202" ) ) {
+                return "代上驴付供应商" + data.getBu() + "线上项目《" + data.getItemCode() + "》团款";
+            }
+        }
+        return null;
+
+    }
+
+    private String[] getCcode( String bu ){
+        switch( bu ) {
+            case "国内BU":
+                return "1122,60010301,1122,60010302,64010301,64010302,2202,0".split( "," );
+            case "门票BU":
+                return "1122,60010101,1122,60010102,64010101,64010102,2202,0".split( "," );
+            case "目的地BU":
+                return "1122,60010202,1122,60010203,64010202,64010203,2202,0".split( "," );
+            case "出境BU":
+                return "1122,0,1122,60010402,0,64010402,2202,0".split( "," );
+            case "总经办":
+                return "1122,6001060401,1122,6001060402,6401060401,6401060402,2202,2202".split( "," );
+        }
+        return null;
     }
 
     /**
@@ -72,98 +163,187 @@ public class SqlServer{
                 "'=lly')";
 
 
-        //处理第一条分录
+        //  处理第一条分录
         int inoId = getMaxInoId();//自增，对应凭证的 记 。一个项目下所有的分录公用一个ino_id
         System.out.println( "inoId is " + inoId );
 
-        //查询供应商id
-        String supplyId = this.getSupplierIdFromName( data.getSupplier() ) + "";
+        final String[] ccode = getCcode( data.getBu() );
+        if( ccode == null ) {
+            System.out.println( data.getBu() + "未找到对应的ccode" );
+            System.exit( 0 );
+        }
+        System.out.println( data.getBu() + " ccode is " + Arrays.toString( ccode ) );
 
+        final String[] ccodeEqual = getCcodeEqual( data.getBu() );
+        System.out.println( "ccodeEqual is " + Arrays.toString( ccodeEqual ) );
+
+        int inid = 1;
+        //查询供应商id
+//        String supplyId = "110011";
+        String supplyId = this.getSupplierIdFromName( data.getSupplier() );
+        System.out.println( "供应商ID is " + supplyId);
+
+        String sql = "";
         /**********************************  分录1  *************************************/
-        String sql = String.format( sqlFormat,
-                inoId, 1, formatter.format( data.getCreateTime() ), data.getCreater(),
-                "确认" + data.getBu() + "线上项目《" + data.getItemCode() + "》收入",
-                "1122", data.getSettlementPrice(), 0f,
-                "'" + data.getOrderId() + "'", "'" + formatter.format( data.getPlayTime() ) + "'", "'0006'", "NULL", data.getItemCode(),
-                "'" + data.getSalesman() + "'", "60010301,60010302,2202",
-                formatter.format( data.getCreateTime() ),
-                "NULL"
-        );
-        accvouchSqls.add( sql );
+        if( data.getSettlementPrice() != 0 && !ccode[0].equals( "0" ) ) {
+            sql = String.format( sqlFormat,
+                    inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
+                    getSummary( data, ccode[0],true ),
+                    ccode[0], data.getSettlementPrice(), 0f,
+                    "'" + data.getOrderId() + "'", "'" + formatter.format( data.getPlayTime() ) + "'", "'" + data.getClient() + "'", "NULL", data.getItemCode(),
+                    "'" + data.getSalesman() + "'", ccodeEqual[0],
+                    formatter.format( data.getCreateTime() ),
+                    "NULL"
+            );
+
+            accvouchSqls.add( sql );
+            System.out.println( "第一条sql" );
+        }
 
         /************************************  分录2  *************************************/
-        sql = String.format( sqlFormat,
-                inoId, 2, formatter.format( data.getCreateTime() ), data.getCreater(),
-                "确认" + data.getBu() + "线上项目《" + data.getItemCode() + "》收入",
-                "60010301", 0f, data.getSettlementPrice(),
-                "NULL", "NULL", "NULL", "NULL", data.getItemCode(),
-                "NULL", "1122,64010301,64010302",
-                formatter.format( data.getCreateTime() ),
-                "NULL"
-        );
-        accvouchSqls.add( sql );
+        if( data.getSettlementPrice() != 0 && !ccode[1].equals( "0" ) ) {
+            sql = String.format( sqlFormat,
+                    inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
+                    getSummary( data, ccode[1],true ),
+                    ccode[1], 0f, data.getSettlementPrice(),
+                    "NULL", "NULL", "NULL", "NULL", data.getItemCode(),
+                    "NULL", ccodeEqual[1],
+                    formatter.format( data.getCreateTime() ),
+                    "NULL"
+            );
+
+            accvouchSqls.add( sql );
+        }
 
         /*************************************  分录3  *************************************/
-        sql = String.format( sqlFormat,
-                inoId, 3, formatter.format( data.getCreateTime() ), data.getCreater(),
-                "确认" + data.getBu() + "线上项目《" + data.getItemCode() + "》收入",
-                "1122", data.getCommission(), 0f,
-                "'" + data.getOrderId() + "'", "'" + formatter.format( data.getPlayTime() ) + "'", "'0003'", "NULL", data.getItemCode(),
-                "'" + data.getSalesman() + "'", "60010301,60010302,2202",
-                formatter.format( data.getCreateTime() ),
-                "'***'"
-        );
-        accvouchSqls.add( sql );
+        if( data.getCommission() != 0 && !ccode[2].equals( "0" ) ) {
+            sql = String.format( sqlFormat,
+                    inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
+                    getSummary( data, ccode[2],false ),
+                    ccode[2], data.getCommission(), 0f,
+                    "'" + data.getOrderId() + "'", "'" + formatter.format( data.getPlayTime() ) + "'", "'0003'", "NULL", data.getItemCode(),
+                    "'" + data.getSalesman() + "'", ccodeEqual[0],
+                    formatter.format( data.getCreateTime() ),
+                    "'***'"
+            );
+
+            accvouchSqls.add( sql );
+        }
 
         /*************************************  分录4  *************************************/
-        sql = String.format( sqlFormat,
-                inoId, 4, formatter.format( data.getCreateTime() ), data.getCreater(),
-                "确认" + data.getBu() + "线上项目《" + data.getItemCode() + "》收入",
-                "60010302", 0f, data.getCommission(),
-                "NULL", "NULL", "NULL", "NULL", data.getItemCode(),
-                "NULL", "1122,64010301,64010302",
-                formatter.format( data.getCreateTime() ),
-                "'***'"
-        );
-        accvouchSqls.add( sql );
+        if( data.getCommission() != 0 && !ccode[3].equals( "0" ) ) {
+            sql = String.format( sqlFormat,
+                    inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
+                    getSummary( data, ccode[3],true ),
+                    ccode[3], 0f, data.getCommission(),
+                    "NULL", "NULL", "NULL", "NULL", data.getItemCode(),
+                    "NULL", ccodeEqual[1],
+                    formatter.format( data.getCreateTime() ),
+                    "'***'"
+            );
+
+            accvouchSqls.add( sql );
+        }
 
         /************************************  分录5  *************************************/
-        sql = String.format( sqlFormat,
-                inoId, 5, formatter.format( data.getCreateTime() ), data.getCreater(),
-                "确认" + data.getBu() + "线上项目《" + data.getItemCode() + "》成本",
-                "64010301", data.getSettlementPrice1(), 0f,
-                "NULL", "NULL", "NULL", "NULL", data.getItemCode(),
-                "NULL", "60010301,60010302,2202",
-                formatter.format( data.getCreateTime() ),
-                "'***'"
-        );
-        accvouchSqls.add( sql );
+        if( data.getSettlementPrice1() != 0 && !ccode[4].equals( "0" ) ) {
+            sql = String.format( sqlFormat,
+                    inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
+                    getSummary( data, ccode[4],true ),
+                    ccode[4], data.getSettlementPrice1(), 0f,
+                    "NULL", "NULL", "NULL", "NULL", data.getItemCode(),
+                    "NULL", ccodeEqual[0],
+                    formatter.format( data.getCreateTime() ),
+                    "'***'"
+            );
+
+            accvouchSqls.add( sql );
+        }
 
         /*************************************  分录6  *************************************/
-        sql = String.format( sqlFormat,
-                inoId, 6, formatter.format( data.getCreateTime() ), data.getCreater(),
-                "确认" + data.getBu() + "线上项目《" + data.getItemCode() + "》成本",
-                "64010302", -data.getRebate(), 0f,
-                "NULL", "NULL", "NULL", "NULL", data.getItemCode(),
-                "NULL", "1122,64010301,64010302",
-                formatter.format( data.getCreateTime() ),
-                "'***'"
-        );
-        accvouchSqls.add( sql );
+        if( data.getRebate() != 0 && !ccode[5].equals( "0" ) ) {
+            sql = String.format( sqlFormat,
+                    inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
+                    getSummary( data, ccode[5],true ),
+                    ccode[5], -data.getRebate(), 0f,
+                    "NULL", "NULL", "NULL", "NULL", data.getItemCode(),
+                    "NULL", ccodeEqual[0],
+                    formatter.format( data.getCreateTime() ),
+                    "'***'"
+            );
+
+            accvouchSqls.add( sql );
+
+            //出境部 专线返点是2条
+
+        }
 
 
         /*************************************  分录7  *************************************/
-        sql = String.format( sqlFormat,
-                inoId, 7, formatter.format( data.getCreateTime() ), data.getCreater(),
-                "确认" + data.getBu() + "线上项目《" + data.getItemCode() + "》成本",
-                "2202", 0f, data.getPayables(),
-                "'" + data.getOrderId() + "'", "'" + formatter.format( data.getPlayTime() ) + "'", "NULL", "'" + supplyId + "'", data.getItemCode(),
-                "'" + data.getSalesman() + "'", "60010301,60010302,2202",
-                formatter.format( data.getCreateTime() ),
-                "'***'"
-        );
-        accvouchSqls.add( sql );
+        if( data.getPayables() != 0 && !ccode[6].equals( "0" ) ) {
+            sql = String.format( sqlFormat,
+                    inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
+                    getSummary( data, ccode[6],true ),
+                    ccode[6], 0f, data.getPayables(),
+                    "'" + data.getOrderId() + "'", "'" + formatter.format( data.getPlayTime() ) + "'", "NULL", "'" + supplyId + "'", data.getItemCode(),
+                    "'" + data.getSalesman() + "'", ccodeEqual[1],
+                    formatter.format( data.getCreateTime() ),
+                    "'***'"
+            );
+
+            accvouchSqls.add( sql );
+        }
+
+        /*************************************  分录8(总经办)  *************************************/
+
+        if( data.getRebate() != 0 && !ccode[7].equals( "0" ) ) {
+            String supplyId1 = this.getSupplierIdFromName( data.getSupplier1() );
+            supplyId1 = supplyId1.equals( "" ) ? "NULL":"'"+supplyId1+"'";
+            sql = String.format( sqlFormat,
+                    inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
+                    getSummary( data, ccode[1],true ),
+                    ccode[7], 0f, -data.getRebate(),
+                    "'" + data.getOrderId() + "'", "'" + formatter.format( data.getPlayTime() ) + "'", "'" + data.getClient() + "'", supplyId1 , data.getItemCode(),
+                    "'" + data.getSalesman() + "'", ccodeEqual[1],
+                    formatter.format( data.getCreateTime() ),
+                    "'***'"
+            );
+
+            accvouchSqls.add( sql );
+        }
         return accvouchSqls;
+    }
+
+    /**
+     * 检查项目是否重复
+     *
+     * @param datas
+     * @return true:重复了
+     */
+
+    private boolean isFitemss00Duplicate( List<ExcelData> datas ){
+        for( ExcelData data : datas ) {
+            PreparedStatement pst = null;
+            ResultSet rs = null;
+            Connection con = DatabaseUtil.INSTANCE.getConnection();
+            String sql = "SELECT * FROM fitemss00 where citemname='" + data.getOrderId() + "'";
+            try {
+                pst = con.prepareStatement( sql );
+
+                rs = pst.executeQuery();
+                while( rs.next() ) {
+                    System.out.println( "发现重复的订单号：" + data );
+                    return true;
+                }
+
+            } catch( SQLException e ) {
+                e.printStackTrace();
+            } finally {
+                DatabaseUtil.INSTANCE.close( rs, pst, con );
+            }
+
+        }
+        return false;
     }
 
     private String buildFitemss00Sql( ExcelData data ){
@@ -179,110 +359,7 @@ public class SqlServer{
                 ")";
     }
 
-    private int getMaxInoId(){
-        PreparedStatement pst = null;
-        ResultSet rs = null;
-        Connection con = DatabaseUtil.INSTANCE.getConnection();
-        String sql = "SELECT TOP 1 ino_id FROM GL_accvouch ORDER BY ino_id DESC";
-        try {
-            pst = con.prepareStatement( sql );
 
-            rs = pst.executeQuery();
-//            JdbcUtils.printResultSet(rs);
-            while( rs.next() ) {
-                return rs.getInt( 1 );
-            }
-            return 1;
 
-        } catch( SQLException e ) {
-            e.printStackTrace();
-        } finally {
 
-            DatabaseUtil.INSTANCE.close( rs, pst, con );
-        }
-        return -1;
-
-    }
-
-    /**
-     * 查取供应商id
-     *
-     * @param supplierName
-     * @return
-     */
-    private int getSupplierIdFromName( String supplierName ){
-        PreparedStatement pst = null;
-        ResultSet rs = null;
-        Connection con = DatabaseUtil.INSTANCE.getConnection();
-        String sql = "SELECT TOP 1 id FROM supplier ORDER BY ino_id DESC";
-        try {
-            pst = con.prepareStatement( sql );
-            rs = pst.executeQuery();
-
-            while( rs.next() ) {
-                return rs.getInt( 1 );
-            }
-
-        } catch( SQLException e ) {
-            e.printStackTrace();
-        } finally {
-            DatabaseUtil.INSTANCE.close( rs, pst, con );
-        }
-        return -1;
-    }
-
-    /**
-     * 运行传入的sql语句
-     */
-    public void run(){
-        List<String> excelRowSql = new ArrayList<>(  );
-
-        int index = 1;
-        for( String sql : sqls ) {
-            excelRowSql.add( sql );
-            if( index++ % 8 == 0){
-                run( excelRowSql );
-                excelRowSql.clear();
-            }
-        }
-
-    }
-
-    /**
-     * 采用事物的方式处理一行excel数据
-     *
-     * @param excelRowSql   一行excel数据所需要的8条sql语句
-     */
-    private void run( List<String> excelRowSql ){
-        System.out.println( "开始执行sql写入" + excelRowSql);
-        System.out.println();
-        Connection con = DatabaseUtil.INSTANCE.getConnection();
-        PreparedStatement pst = null;
-        try {
-            con.setAutoCommit( false );
-            for( String sql : excelRowSql ) {
-                pst = con.prepareStatement( sql );
-                pst.executeUpdate();
-                break;//测试环境，仅仅执行第一条语句
-            }
-            con.commit();
-
-        } catch( SQLException e ) {
-            e.printStackTrace();
-            try {
-                con.rollback();
-            } catch( SQLException e1 ) {
-                e1.printStackTrace();
-            }
-        } finally {
-            try {
-                con.setAutoCommit(true);//设置事务提交方式为自动提交：
-
-            } catch (SQLException e) {
-               e.printStackTrace();
-            }
-
-            DatabaseUtil.INSTANCE.close( null, pst, con );
-        }
-    }
 }
