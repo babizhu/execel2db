@@ -4,6 +4,7 @@ import com.srxk.lmm.pojo.ExcelDataWithYingshou;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 /**
@@ -70,7 +71,7 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
                 "      bvouchedit, bvouchAddordele, bvouchmoneyhold, " +//3
                 "      bvalueedit, bcodeedit, bPCSedit, bDeptedit, bItemedit, bCusSupInput, " +//6
                 "      cDefine10) " +
-                "VALUES (1,'记',1,%d,%d,'%s',-1,'%s',0," +
+                "VALUES (%s,'记',1,%d,%d,'%s',-1,'%s',0," +
                 "'" + data.getSummary() + "'," +
                 "'%s',%f,%f,0,0,0,0,0," +//8    ccode, md, mc, md_f, mc_f, nfrat, nd_s, nc_s, "
                 "'%s',%s,%s,%s," +//3              dt_date, ccus_id, csup_id,citem_id, "
@@ -82,9 +83,12 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
 
 
         String sql = "";
+        Calendar cal = Calendar.getInstance();
+        cal.setTime( data.getCreateTime() );
+        int month = cal.get( Calendar.MONTH ) + 1;
         /**********************************  总的收款分录  *************************************/
         if( data.getId() == lastId ) {
-            sql = String.format( sqlFormat,
+            sql = String.format( sqlFormat,month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
                     //第2行跳过
                     "100201", 0f, data.getPayables(),//ccode, md, mc, md_f, mc_f, nfrat, nd_s, nc_s, "
@@ -97,7 +101,7 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
             );
 
         } else {
-            sql = String.format( sqlFormat,
+            sql = String.format( sqlFormat,month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
                     //第2行跳过
                     "2202",  data.getPayables(),0f, //ccode, md, mc, md_f, mc_f, nfrat, nd_s, nc_s, "
@@ -153,7 +157,7 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
                 "      bvouchedit, bvouchAddordele, bvouchmoneyhold, " +//3
                 "      bvalueedit, bcodeedit, bPCSedit, bDeptedit, bItemedit, bCusSupInput, " +//6
                 "      cDefine10) " +
-                "VALUES (1,'记',1,%d,%d,'%s',-1,'%s',0," +
+                "VALUES (%s,'记',1,%d,%d,'%s',-1,'%s',0," +
                 "'" + data.getSummary() + "'," +
                 "'%s',%f,%f,0,0,0,0,0," +//8    ccode, md, mc, md_f, mc_f, nfrat, nd_s, nc_s, "
                 "'%s',%s,%s," +//3              dt_date, ccus_id, citem_id, "
@@ -165,9 +169,12 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
 
 
         String sql = "";
+        Calendar cal = Calendar.getInstance();
+        cal.setTime( data.getCreateTime() );
+        int month = cal.get( Calendar.MONTH ) + 1;
         /**********************************  总的收款分录  *************************************/
         if( data.getId() == 1 ) {
-            sql = String.format( sqlFormat,
+            sql = String.format( sqlFormat,month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
                     //第2行跳过
                     "100201", data.getSettlementPrice(), 0f, //ccode, md, mc, md_f, mc_f, nfrat, nd_s, nc_s, "
@@ -180,7 +187,7 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
             );
 
         } else {
-            sql = String.format( sqlFormat,
+            sql = String.format( sqlFormat,month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
                     //第2行跳过
                     "1122", 0f, data.getSettlementPrice(), //ccode, md, mc, md_f, mc_f, nfrat, nd_s, nc_s, "

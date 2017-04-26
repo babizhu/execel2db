@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 
 /**
@@ -152,7 +153,7 @@ public class SqlServer extends AbstractSqlServer{
                 "      bvouchedit, bvouchAddordele, bvouchmoneyhold, " +
                 "      bvalueedit, bcodeedit, ccodecontrol, bPCSedit, bDeptedit, bItemedit, bCusSupInput, " +
                 "      cDefine10) " +
-                "VALUES (1,'记',1,%d,%d,'%s',-1,'%s',0," +
+                "VALUES (%s,'记',1,%d,%d,'%s',-1,'%s',0," +
                 "'%s'," +
                 "'%s',%f,%f,0,0,0,0,0," +
                 "%s,%s,%s,%s,'%s'," +
@@ -184,9 +185,12 @@ public class SqlServer extends AbstractSqlServer{
         System.out.println( "供应商ID is " + supplyId);
 
         String sql = "";
+        Calendar cal = Calendar.getInstance();
+        cal.setTime( data.getCreateTime() );
+        int month = cal.get( Calendar.MONTH ) + 1;
         /**********************************  分录1  *************************************/
         if( data.getSettlementPrice() != 0 && !ccode[0].equals( "0" ) ) {
-            sql = String.format( sqlFormat,
+            sql = String.format( sqlFormat,month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
                     getSummary( data, ccode[0],true ),
                     ccode[0], data.getSettlementPrice(), 0f,
@@ -202,7 +206,7 @@ public class SqlServer extends AbstractSqlServer{
 
         /************************************  分录2  *************************************/
         if( data.getSettlementPrice() != 0 && !ccode[1].equals( "0" ) ) {
-            sql = String.format( sqlFormat,
+            sql = String.format( sqlFormat,month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
                     getSummary( data, ccode[1],true ),
                     ccode[1], 0f, data.getSettlementPrice(),
@@ -217,7 +221,7 @@ public class SqlServer extends AbstractSqlServer{
 
         /*************************************  分录3  *************************************/
         if( data.getCommission() != 0 && !ccode[2].equals( "0" ) ) {
-            sql = String.format( sqlFormat,
+            sql = String.format( sqlFormat,month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
                     getSummary( data, ccode[2],false ),
                     ccode[2], data.getCommission(), 0f,
@@ -232,7 +236,7 @@ public class SqlServer extends AbstractSqlServer{
 
         /*************************************  分录4  *************************************/
         if( data.getCommission() != 0 && !ccode[3].equals( "0" ) ) {
-            sql = String.format( sqlFormat,
+            sql = String.format( sqlFormat,month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
                     getSummary( data, ccode[3],true ),
                     ccode[3], 0f, data.getCommission(),
@@ -247,7 +251,7 @@ public class SqlServer extends AbstractSqlServer{
 
         /************************************  分录5  *************************************/
         if( data.getSettlementPrice1() != 0 && !ccode[4].equals( "0" ) ) {
-            sql = String.format( sqlFormat,
+            sql = String.format( sqlFormat,month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
                     getSummary( data, ccode[4],true ),
                     ccode[4], data.getSettlementPrice1(), 0f,
@@ -262,7 +266,7 @@ public class SqlServer extends AbstractSqlServer{
 
         /*************************************  分录6  *************************************/
         if( data.getRebate() != 0 && !ccode[5].equals( "0" ) ) {
-            sql = String.format( sqlFormat,
+            sql = String.format( sqlFormat,month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
                     getSummary( data, ccode[5],true ),
                     ccode[5], -data.getRebate(), 0f,
@@ -281,7 +285,7 @@ public class SqlServer extends AbstractSqlServer{
 
         /*************************************  分录7  *************************************/
         if( data.getPayables() != 0 && !ccode[6].equals( "0" ) ) {
-            sql = String.format( sqlFormat,
+            sql = String.format( sqlFormat,month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
                     getSummary( data, ccode[6],true ),
                     ccode[6], 0f, data.getPayables(),
@@ -299,7 +303,7 @@ public class SqlServer extends AbstractSqlServer{
         if( data.getRebate() != 0 && !ccode[7].equals( "0" ) ) {
             String supplyId1 = this.getSupplierIdFromName( data.getSupplier1() );
             supplyId1 = supplyId1.equals( "" ) ? "NULL":"'"+supplyId1+"'";
-            sql = String.format( sqlFormat,
+            sql = String.format( sqlFormat,month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
                     getSummary( data, ccode[1],true ),
                     ccode[7], 0f, -data.getRebate(),

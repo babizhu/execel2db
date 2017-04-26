@@ -101,10 +101,10 @@ public class ExcelData{
         cal.setTime( playTime );
 
         int month = cal.get( Calendar.MONTH ) + 1;
-        String monthStr = month > 10 ? month + "" : "0" + month;
+        String monthStr = month > 9 ? month + "" : "0" + month;
 
         int dayOfMonth = cal.get( Calendar.DAY_OF_MONTH );
-        String dayOfMonthStr = dayOfMonth > 10 ? dayOfMonth + "" : "0" + dayOfMonth;
+        String dayOfMonthStr = dayOfMonth > 9 ? dayOfMonth + "" : "0" + dayOfMonth;
 
         String time = (cal.get( Calendar.YEAR ) -2000)+ monthStr + dayOfMonthStr;
         return time + this.productName;
