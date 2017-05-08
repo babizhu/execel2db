@@ -14,6 +14,8 @@ import java.util.List;
 
 /**
  * Created by liulaoye on 17-3-17.
+ * 由于sqljdbc.jar没有通过maven引入，导致maven打包生成的jar包中的/META-INF/MANIFEST.MF文件的
+ * Class-Path: 不包含此jar包的引用，需要maven打包之后手动增加：lib/sqljdbc4-1.0.0.jar
  */
 public class Launcher{
     public static void main( String[] args ) throws IOException, InvalidFormatException{

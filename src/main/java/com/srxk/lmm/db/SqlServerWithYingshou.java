@@ -22,7 +22,13 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
           产生若干条实际的应收
          */
         List<String> accvouchSqls = new ArrayList<>();
-        inoId = getMaxInoId();//自增，对应凭证的 记 。一个项目下所有的分录公用一个ino_id
+        Calendar cal = Calendar.getInstance();
+        cal.setTime( datas.get( 0 ).getCreateTime() );
+        int month = cal.get( Calendar.MONTH ) + 1;
+
+        //  处理第一条分录
+        int inoId = getMaxInoId( month );//自增，对应凭证的 记 。一个项目下所有的分录公用一个ino_id
+//        inoId = getMaxInoId();//自增，对应凭证的 记 。一个项目下所有的分录公用一个ino_id
         System.out.println( "inoId is " + inoId );
         if( runType == 2 ) {//收入
             for( ExcelDataWithYingshou data : datas ) {
@@ -34,14 +40,13 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
             sqls.add( accvouchSqls );
         } else {//支出 (3)
             for( ExcelDataWithYingshou data : datas ) {
-                accvouchSqls.add( buildAccvouchSqlWithZhichu( data,datas.get( datas.size() - 1 ).getId() ) );
+                accvouchSqls.add( buildAccvouchSqlWithZhichu( data, datas.get( datas.size() - 1 ).getId() ) );
             }
 
             accvouchSqls.add( buildCashTableWithZhichu( datas.get( datas.size() - 1 ), datas.size() ) );
 
             sqls.add( accvouchSqls );
         }
-
 
     }
 
@@ -52,13 +57,16 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
      * @return
      */
     private String buildCashTableWithZhichu( ExcelDataWithYingshou data, int maxInid ){
+        Calendar cal = Calendar.getInstance();
+        cal.setTime( data.getCreateTime() );
+        int month = cal.get( Calendar.MONTH ) + 1;
         String sql = "insert into GL_CashTable(iperiod,isignseq,ino_id,inid,cCashItem,md,mc) " +
-                "VALUES (1,1," + inoId + "," + maxInid + ",'04'," + "0," + data.getPayables() + ")";
+                "VALUES (" + month + ",1," + inoId + "," + maxInid + ",'04'," + "0," + data.getPayables() + ")";
 
         return sql;
     }
 
-    private String buildAccvouchSqlWithZhichu( ExcelDataWithYingshou data,int lastId ){
+    private String buildAccvouchSqlWithZhichu( ExcelDataWithYingshou data, int lastId ){
         final SimpleDateFormat formatter = new SimpleDateFormat( "yyyy-MM-dd" );
 
         String sqlFormat = "INSERT INTO GL_accvouch" +
@@ -88,11 +96,11 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
         int month = cal.get( Calendar.MONTH ) + 1;
         /**********************************  总的收款分录  *************************************/
         if( data.getId() == lastId ) {
-            sql = String.format( sqlFormat,month,
+            sql = String.format( sqlFormat, month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
                     //第2行跳过
                     "100201", 0f, data.getPayables(),//ccode, md, mc, md_f, mc_f, nfrat, nd_s, nc_s, "
-                    formatter.format( data.getCreateTime() ), "NULL", "NULL","NULL",//dt_date, ccus_id, csup_id,citem_id, "
+                    formatter.format( data.getCreateTime() ), "NULL", "NULL", "NULL",//dt_date, ccus_id, csup_id,citem_id, "
                     "NULL", "NULL", "2202",//citem_class, cname, ccode_equal,  bdelete,  "
                     formatter.format( data.getCreateTime() )//doutbilldate, coutsign
                     //第7行跳过
@@ -101,11 +109,11 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
             );
 
         } else {
-            sql = String.format( sqlFormat,month,
+            sql = String.format( sqlFormat, month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
                     //第2行跳过
-                    "2202",  data.getPayables(),0f, //ccode, md, mc, md_f, mc_f, nfrat, nd_s, nc_s, "
-                    formatter.format( data.getCreateTime() ),"NULL", "'" + getSupplierIdFromName(data.getSupplier()) + "'", "'" + data.getItemCode() + "'",//dt_date, ccus_id, csup_id,citem_id, "
+                    "2202", data.getPayables(), 0f, //ccode, md, mc, md_f, mc_f, nfrat, nd_s, nc_s, "
+                    formatter.format( data.getCreateTime() ), "NULL", "'" + getSupplierIdFromName( data.getSupplier() ) + "'", "'" + data.getItemCode() + "'",//dt_date, ccus_id, csup_id,citem_id, "
                     "'00'", "NULL", "100201",//citem_class, cname, ccode_equal,  bdelete,  "
                     formatter.format( data.getCreateTime() )//doutbilldate, coutsign
                     //第7行跳过
@@ -123,7 +131,6 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
     }
 
 
-
     /**
      * 写入收入的现金流量表
      *
@@ -131,8 +138,11 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
      * @return
      */
     private String buildCashTableWithShouru( ExcelDataWithYingshou data ){
+        Calendar cal = Calendar.getInstance();
+        cal.setTime( data.getCreateTime() );
+        int month = cal.get( Calendar.MONTH ) + 1;
         String sql = "insert into GL_CashTable(iperiod,isignseq,ino_id,inid,cCashItem,md,mc) " +
-                "VALUES (1,1," + inoId + ",1,'01'," + data.getSettlementPrice() + ",0)";
+                "VALUES (" + month + ",1," + inoId + ",1,'01'," + data.getSettlementPrice() + ",0)";
 
         return sql;
     }
@@ -174,7 +184,7 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
         int month = cal.get( Calendar.MONTH ) + 1;
         /**********************************  总的收款分录  *************************************/
         if( data.getId() == 1 ) {
-            sql = String.format( sqlFormat,month,
+            sql = String.format( sqlFormat, month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
                     //第2行跳过
                     "100201", data.getSettlementPrice(), 0f, //ccode, md, mc, md_f, mc_f, nfrat, nd_s, nc_s, "
@@ -187,7 +197,7 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
             );
 
         } else {
-            sql = String.format( sqlFormat,month,
+            sql = String.format( sqlFormat, month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
                     //第2行跳过
                     "1122", 0f, data.getSettlementPrice(), //ccode, md, mc, md_f, mc_f, nfrat, nd_s, nc_s, "

@@ -163,9 +163,12 @@ public class SqlServer extends AbstractSqlServer{
                 "1,1,%s,1,1,1,0," +
                 "'=lly')";
 
+        Calendar cal = Calendar.getInstance();
+        cal.setTime( data.getCreateTime() );
+        int month = cal.get( Calendar.MONTH ) + 1;
 
         //  处理第一条分录
-        int inoId = getMaxInoId();//自增，对应凭证的 记 。一个项目下所有的分录公用一个ino_id
+        int inoId = getMaxInoId(month);//自增，对应凭证的 记 。一个项目下所有的分录公用一个ino_id
         System.out.println( "inoId is " + inoId );
 
         final String[] ccode = getCcode( data.getBu() );
@@ -185,9 +188,7 @@ public class SqlServer extends AbstractSqlServer{
         System.out.println( "供应商ID is " + supplyId);
 
         String sql = "";
-        Calendar cal = Calendar.getInstance();
-        cal.setTime( data.getCreateTime() );
-        int month = cal.get( Calendar.MONTH ) + 1;
+
         /**********************************  分录1  *************************************/
         if( data.getSettlementPrice() != 0 && !ccode[0].equals( "0" ) ) {
             sql = String.format( sqlFormat,month,

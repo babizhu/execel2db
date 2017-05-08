@@ -13,30 +13,40 @@ import java.util.List;
  */
 public class AbstractSqlServer{
     private int inoId = -1;
-    List<List<String>> sqls = new ArrayList<>(  );
+    List<List<String>> sqls = new ArrayList<>();
+
     public void printSql(){
         System.out.println( "生成的sql语句如下:" );
         int index = 1;
         for( List<String> sql : sqls ) {
             for( String s : sql ) {
-                System.out.println(s);
+                System.out.println( s );
             }
-            System.out.println("==================================================");
+            System.out.println( "==================================================" );
         }
     }
-    protected int getMaxInoId(){
+
+    /**
+     * 要取出当前月份的最大ino_id
+     *
+     * @param period
+     * @return
+     */
+    protected int getMaxInoId( int period ){
         if( inoId == -1 ) {
             PreparedStatement pst = null;
             ResultSet rs = null;
             Connection con = DatabaseUtil.INSTANCE.getConnection();
-            String sql = "SELECT TOP 1 ino_id FROM GL_accvouch ORDER BY ino_id DESC";
+            String sql = "SELECT TOP 1 ino_id FROM GL_accvouch where iperiod=" + period + " ORDER BY ino_id DESC";
             try {
                 pst = con.prepareStatement( sql );
 
                 rs = pst.executeQuery();
 //            JdbcUtils.printResultSet(rs);
-                while( rs.next() ) {
+                if( rs.next() ) {
                     this.inoId = rs.getInt( 1 ) + 1;
+                }else{
+                    this.inoId = 1;
                 }
 
             } catch( SQLException e ) {
