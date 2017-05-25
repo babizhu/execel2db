@@ -14,6 +14,7 @@ import java.util.List;
 
 /**
  * Created by liulaoye on 17-3-20.
+ *
  */
 public class SqlServer extends AbstractSqlServer{
 
@@ -39,11 +40,11 @@ public class SqlServer extends AbstractSqlServer{
 
 
     /**
-     * @param bu
-     * @return
+     * @param bu    bu
+     * @return ccode
      */
     private String[] getCcodeEqual( String bu ){
-        final String[] ccode = getCcode( bu );
+//        final String[] ccode = getCcode( bu );
         String[] ret = new String[2];
         switch( bu ) {
             case "国内BU":
@@ -73,25 +74,30 @@ public class SqlServer extends AbstractSqlServer{
 
     /**
      * 摘要
-     *
-     * @param data
+     * @param data      data
+     * @param ccode     ccode
+     * @param is0006    006
+     * @param is9Fenlu  是否第九条分录
      * @return
      */
-    private String getSummary( ExcelData data, String ccode, boolean is0006 ){
-//        String[] ret = new String[2];
+    private String getSummary( ExcelData data, String ccode, boolean is0006,boolean is9Fenlu ){
         final String bu = data.getBu();
+        if(is9Fenlu){
+            return "确认"+bu+"线上项目《" + data.getItemCode() + "》应交税金";
+        }
+//        String[] ret = new String[2];
         if( bu.equals( "国内BU" ) || bu.equals( "门票BU" ) || bu.equals( "目的地BU" ) ) {
             if( ccode.equals( "1122" ) || ccode.startsWith( "6001" ) ) {
-                return "确认" + data.getBu() + "线上项目《" + data.getItemCode() + "》收入";
+                return "确认" + bu + "线上项目《" + data.getItemCode() + "》收入";
             } else {
-                return "确认" + data.getBu() + "线上项目《" + data.getItemCode() + "》成本";
+                return "确认" + bu + "线上项目《" + data.getItemCode() + "》成本";
             }
         }
         if(  bu.equals( "总经办" ) ) {
             if( ccode.equals( "1122" ) || ccode.startsWith( "6001" ) ) {
-                return "确认" + data.getBu() + "线线下项目《" + data.getItemCode() + "》收入";
+                return "确认" + bu + "线线下项目《" + data.getItemCode() + "》收入";
             } else {
-                return "确认" + data.getBu() + "线下项目《" + data.getItemCode() + "》成本";
+                return "确认" + bu + "线下项目《" + data.getItemCode() + "》成本";
             }
         }
         if( bu.equals( "出境BU" ) ) {
@@ -100,18 +106,18 @@ public class SqlServer extends AbstractSqlServer{
                 if( is0006 ) {
                     return "代供应商收上驴线上项目《" + data.getItemCode() + "》团款";
                 } else {
-                    return "确认" + data.getBu() + "线上项目《" + data.getItemCode() + "》反佣收入";
+                    return "确认" + bu + "线上项目《" + data.getItemCode() + "》反佣收入";
                 }
 
             }
             if( ccode.equals( "60010402" ) ) {
-                return "确认" + data.getBu() + "线上项目《" + data.getItemCode() + "》反佣收入";
+                return "确认" + bu + "线上项目《" + data.getItemCode() + "》反佣收入";
             }
             if( ccode.equals( "64010402" ) ) {
-                return "确认" + data.getBu() + "线上项目《" + data.getItemCode() + "》反佣成本";
+                return "确认" + bu + "线上项目《" + data.getItemCode() + "》反佣成本";
             }
             if( ccode.equals( "2202" ) ) {
-                return "代上驴付供应商" + data.getBu() + "线上项目《" + data.getItemCode() + "》团款";
+                return "代上驴付供应商" + bu + "线上项目《" + data.getItemCode() + "》团款";
             }
         }
         return null;
@@ -121,15 +127,15 @@ public class SqlServer extends AbstractSqlServer{
     private String[] getCcode( String bu ){
         switch( bu ) {
             case "国内BU":
-                return "1122,60010301,1122,60010302,64010301,64010302,2202,0".split( "," );
+                return "1122,60010301,1122,60010302,64010301,64010302,2202,0,22210301".split( "," );
             case "门票BU":
-                return "1122,60010101,1122,60010102,64010101,64010102,2202,0".split( "," );
+                return "1122,60010101,1122,60010102,64010101,64010102,2202,0,22210301".split( "," );
             case "目的地BU":
-                return "1122,60010202,1122,60010203,64010202,64010203,2202,0".split( "," );
+                return "1122,60010202,1122,60010203,64010202,64010203,2202,0,22210301".split( "," );
             case "出境BU":
-                return "1122,0,1122,60010402,0,64010402,2202,0".split( "," );
+                return "1122,0,1122,60010402,0,64010402,2202,0,22210301".split( "," );
             case "总经办":
-                return "1122,6001060401,1122,6001060402,6401060401,6401060402,2202,2202".split( "," );
+                return "1122,6001060401,1122,6001060402,6401060401,6401060402,2202,2202,22210301".split( "," );
         }
         return null;
     }
@@ -187,13 +193,13 @@ public class SqlServer extends AbstractSqlServer{
         String supplyId = this.getSupplierIdFromName( data.getSupplier() );
         System.out.println( "供应商ID is " + supplyId);
 
-        String sql = "";
+        String sql;
 
         /**********************************  分录1  *************************************/
         if( data.getSettlementPrice() != 0 && !ccode[0].equals( "0" ) ) {
             sql = String.format( sqlFormat,month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
-                    getSummary( data, ccode[0],true ),
+                    getSummary( data, ccode[0],true,false),
                     ccode[0], data.getSettlementPrice(), 0f,
                     "'" + data.getOrderId() + "'", "'" + formatter.format( data.getPlayTime() ) + "'", "'" + data.getClient() + "'", "NULL", data.getItemCode(),
                     "'" + data.getSalesman() + "'", ccodeEqual[0],
@@ -206,11 +212,11 @@ public class SqlServer extends AbstractSqlServer{
         }
 
         /************************************  分录2  *************************************/
-        if( data.getSettlementPrice() != 0 && !ccode[1].equals( "0" ) ) {
+        if( data.getSettlementPrice2() != 0 && !ccode[1].equals( "0" ) ) {
             sql = String.format( sqlFormat,month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
-                    getSummary( data, ccode[1],true ),
-                    ccode[1], 0f, data.getSettlementPrice(),
+                    getSummary( data, ccode[1],true,false ),
+                    ccode[1], 0f, data.getSettlementPrice2(),
                     "NULL", "NULL", "NULL", "NULL", data.getItemCode(),
                     "NULL", ccodeEqual[1],
                     formatter.format( data.getCreateTime() ),
@@ -224,7 +230,7 @@ public class SqlServer extends AbstractSqlServer{
         if( data.getCommission() != 0 && !ccode[2].equals( "0" ) ) {
             sql = String.format( sqlFormat,month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
-                    getSummary( data, ccode[2],false ),
+                    getSummary( data, ccode[2],false,false ),
                     ccode[2], data.getCommission(), 0f,
                     "'" + data.getOrderId() + "'", "'" + formatter.format( data.getPlayTime() ) + "'", "'0003'", "NULL", data.getItemCode(),
                     "'" + data.getSalesman() + "'", ccodeEqual[0],
@@ -236,11 +242,11 @@ public class SqlServer extends AbstractSqlServer{
         }
 
         /*************************************  分录4  *************************************/
-        if( data.getCommission() != 0 && !ccode[3].equals( "0" ) ) {
+        if( data.getCommission2() != 0 && !ccode[3].equals( "0" ) ) {
             sql = String.format( sqlFormat,month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
-                    getSummary( data, ccode[3],true ),
-                    ccode[3], 0f, data.getCommission(),
+                    getSummary( data, ccode[3],true,false ),
+                    ccode[3], 0f, data.getCommission2(),
                     "NULL", "NULL", "NULL", "NULL", data.getItemCode(),
                     "NULL", ccodeEqual[1],
                     formatter.format( data.getCreateTime() ),
@@ -254,7 +260,7 @@ public class SqlServer extends AbstractSqlServer{
         if( data.getSettlementPrice1() != 0 && !ccode[4].equals( "0" ) ) {
             sql = String.format( sqlFormat,month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
-                    getSummary( data, ccode[4],true ),
+                    getSummary( data, ccode[4],true,false ),
                     ccode[4], data.getSettlementPrice1(), 0f,
                     "NULL", "NULL", "NULL", "NULL", data.getItemCode(),
                     "NULL", ccodeEqual[0],
@@ -269,7 +275,7 @@ public class SqlServer extends AbstractSqlServer{
         if( data.getRebate() != 0 && !ccode[5].equals( "0" ) ) {
             sql = String.format( sqlFormat,month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
-                    getSummary( data, ccode[5],true ),
+                    getSummary( data, ccode[5],true,false ),
                     ccode[5], -data.getRebate(), 0f,
                     "NULL", "NULL", "NULL", "NULL", data.getItemCode(),
                     "NULL", ccodeEqual[0],
@@ -288,7 +294,7 @@ public class SqlServer extends AbstractSqlServer{
         if( data.getPayables() != 0 && !ccode[6].equals( "0" ) ) {
             sql = String.format( sqlFormat,month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
-                    getSummary( data, ccode[6],true ),
+                    getSummary( data, ccode[6],true,false ),
                     ccode[6], 0f, data.getPayables(),
                     "'" + data.getOrderId() + "'", "'" + formatter.format( data.getPlayTime() ) + "'", "NULL", "'" + supplyId + "'", data.getItemCode(),
                     "'" + data.getSalesman() + "'", ccodeEqual[1],
@@ -306,8 +312,26 @@ public class SqlServer extends AbstractSqlServer{
             supplyId1 = supplyId1.equals( "" ) ? "NULL":"'"+supplyId1+"'";
             sql = String.format( sqlFormat,month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
-                    getSummary( data, ccode[1],true ),
+                    getSummary( data, ccode[1],true,false ),
                     ccode[7], 0f, -data.getRebate(),
+                    "'" + data.getOrderId() + "'", "'" + formatter.format( data.getPlayTime() ) + "'", "'" + data.getClient() + "'", supplyId1 , data.getItemCode(),
+                    "'" + data.getSalesman() + "'", ccodeEqual[1],
+                    formatter.format( data.getCreateTime() ),
+                    "'***'"
+            );
+
+            accvouchSqls.add( sql );
+        }
+
+        /*************************************  分录9(新增)  *************************************/
+
+        if( data.getZzs() != 0 && !ccode[8].equals( "0" ) ) {
+            String supplyId1 = this.getSupplierIdFromName( data.getSupplier1() );
+            supplyId1 = supplyId1.equals( "" ) ? "NULL":"'"+supplyId1+"'";
+            sql = String.format( sqlFormat,month,
+                    inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
+                    getSummary( data, ccode[1],false,true ),
+                    ccode[8], 0f, data.getZzs(),
                     "'" + data.getOrderId() + "'", "'" + formatter.format( data.getPlayTime() ) + "'", "'" + data.getClient() + "'", supplyId1 , data.getItemCode(),
                     "'" + data.getSalesman() + "'", ccodeEqual[1],
                     formatter.format( data.getCreateTime() ),

@@ -116,6 +116,19 @@ public class ExcelReader{
         if( cells.getCell( 29 ) != null ) {
             data.setSupplier1( cells.getCell( 29 ).getStringCellValue() );
         }
+
+        if( cells.getCell( 30 ) != null ) {
+            data.setSettlementPrice2( cells.getCell( 30 ).getNumericCellValue() );
+        }
+        if( cells.getCell( 31 ) != null ) {
+            data.setCommission2( cells.getCell( 31 ).getNumericCellValue() );
+
+        }
+
+        if( cells.getCell( 32 ) != null ) {
+            data.setZzs( cells.getCell( 32 ).getNumericCellValue() );
+
+        }
         return data;
     }
 

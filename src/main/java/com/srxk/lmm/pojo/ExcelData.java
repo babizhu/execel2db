@@ -37,16 +37,28 @@ public class ExcelData{
      double settlementPrice;
 
     /**
+     * 总部结算价，用于第二条分录
+     */
+    double settlementPrice2;
+
+    /**
      * 佣金
      */
      double commission;
 
-
+    /**
+     * 佣金，用于第四条分录
+     */
+    double commission2;
     /**
      * 供应商结算价
      */
      double settlementPrice1;
 
+    /**
+     * 增值税
+     */
+    double zzs;
     /**
      * 专线返点
      */

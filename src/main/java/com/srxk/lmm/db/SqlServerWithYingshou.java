@@ -9,6 +9,7 @@ import java.util.List;
 
 /**
  * Created by liulaoye on 17-3-20.
+ *
  */
 public class SqlServerWithYingshou extends AbstractSqlServer{
 
@@ -27,8 +28,7 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
         int month = cal.get( Calendar.MONTH ) + 1;
 
         //  处理第一条分录
-        int inoId = getMaxInoId( month );//自增，对应凭证的 记 。一个项目下所有的分录公用一个ino_id
-//        inoId = getMaxInoId();//自增，对应凭证的 记 。一个项目下所有的分录公用一个ino_id
+        inoId = getMaxInoId( month );//自增，对应凭证的 记 。一个项目下所有的分录公用一个ino_id
         System.out.println( "inoId is " + inoId );
         if( runType == 2 ) {//收入
             for( ExcelDataWithYingshou data : datas ) {
@@ -178,7 +178,7 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
                 "'=lly')";
 
 
-        String sql = "";
+        String sql;
         Calendar cal = Calendar.getInstance();
         cal.setTime( data.getCreateTime() );
         int month = cal.get( Calendar.MONTH ) + 1;
