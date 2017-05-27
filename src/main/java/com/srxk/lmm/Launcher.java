@@ -1,7 +1,7 @@
 package com.srxk.lmm;
 
 import com.srxk.lmm.db.SqlServer;
-import com.srxk.lmm.db.SqlServerWithYingshou;
+import com.srxk.lmm.db.SqlServerWithYingshouYingfu;
 import com.srxk.lmm.excel.ExcelReader;
 import com.srxk.lmm.excel.ExcelReaderWithYingshou;
 import com.srxk.lmm.pojo.ExcelData;
@@ -47,7 +47,7 @@ public class Launcher{
             List<ExcelDataWithYingshou> excelDatas = new ExcelReaderWithYingshou( excelFilePath ).read();
 //            System.out.println( excelDatas );
 
-            final SqlServerWithYingshou db = new SqlServerWithYingshou();
+            final SqlServerWithYingshouYingfu db = new SqlServerWithYingshouYingfu();
             db.parseSql( excelDatas, runType );
             db.printSql();
             db.run();
