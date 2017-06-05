@@ -59,6 +59,12 @@ public class ExcelData{
      * 增值税
      */
     double zzs;
+
+    /**
+     * 增值税抵扣
+     */
+    double zzsDq;
+
     /**
      * 专线返点
      */

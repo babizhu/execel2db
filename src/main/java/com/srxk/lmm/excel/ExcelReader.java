@@ -129,6 +129,11 @@ public class ExcelReader{
             data.setZzs( cells.getCell( 32 ).getNumericCellValue() );
 
         }
+
+        if( cells.getCell( 33 ) != null ) {
+            data.setZzsDq( cells.getCell( 33 ).getNumericCellValue() );
+
+        }
         return data;
     }
 
