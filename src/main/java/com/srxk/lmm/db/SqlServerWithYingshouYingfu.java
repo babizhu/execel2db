@@ -9,9 +9,10 @@ import java.util.List;
 
 /**
  * Created by liulaoye on 17-3-20.
+ * 应收应付凭证分录
  *
  */
-public class SqlServerWithYingshou extends AbstractSqlServer{
+public class SqlServerWithYingshouYingfu extends AbstractSqlServer{
 
 
     private int inid = 1;
@@ -32,18 +33,18 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
         System.out.println( "inoId is " + inoId );
         if( runType == 2 ) {//收入
             for( ExcelDataWithYingshou data : datas ) {
-                accvouchSqls.add( buildAccvouchSqlWithShouru( data ) );
+                accvouchSqls.add( buildAccvouchSqlWithYingshou( data ) );
             }
 
-            accvouchSqls.add( buildCashTableWithShouru( datas.get( 0 ) ) );
+            accvouchSqls.add( buildCashTableWithYingShou( datas.get( 0 ) ) );
 
             sqls.add( accvouchSqls );
         } else {//支出 (3)
             for( ExcelDataWithYingshou data : datas ) {
-                accvouchSqls.add( buildAccvouchSqlWithZhichu( data, datas.get( datas.size() - 1 ).getId() ) );
+                accvouchSqls.add( buildAccvouchSqlWithYingfu( data, datas.get( datas.size() - 1 ).getId() ) );
             }
 
-            accvouchSqls.add( buildCashTableWithZhichu( datas.get( datas.size() - 1 ), datas.size() ) );
+            accvouchSqls.add( buildCashTableWithYingFu( datas.get( datas.size() - 1 ), datas.size() ) );
 
             sqls.add( accvouchSqls );
         }
@@ -53,21 +54,25 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
     /**
      * 写入支出的现金流量表
      *
-     * @param data
-     * @return
+     * @param data data
+     * @return      sql
      */
-    private String buildCashTableWithZhichu( ExcelDataWithYingshou data, int maxInid ){
+    private String buildCashTableWithYingFu( ExcelDataWithYingshou data, int maxInid ){
         Calendar cal = Calendar.getInstance();
         cal.setTime( data.getCreateTime() );
         int month = cal.get( Calendar.MONTH ) + 1;
-        String sql = "insert into GL_CashTable(iperiod,isignseq,ino_id,inid,cCashItem,md,mc) " +
-                "VALUES (" + month + ",1," + inoId + "," + maxInid + ",'04'," + "0," + data.getPayables() + ")";
 
-        return sql;
+        return "insert into GL_CashTable(iperiod,isignseq,ino_id,inid,cCashItem,md,mc) " +
+                "VALUES (" + month + ",1," + inoId + "," + maxInid + ",'04'," + "0," + data.getPayables() + ")";
     }
 
-    private String buildAccvouchSqlWithZhichu( ExcelDataWithYingshou data, int lastId ){
+    private String buildAccvouchSqlWithYingfu( ExcelDataWithYingshou data, int lastId ){
         final SimpleDateFormat formatter = new SimpleDateFormat( "yyyy-MM-dd" );
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTime( data.getCreateTime() );
+        int month = cal.get( Calendar.MONTH ) + 1;
+
 
         String sqlFormat = "INSERT INTO GL_accvouch" +
                 "      (iperiod, csign, isignseq, ino_id, inid, dbill_date, idoc, cbill, ibook, " +
@@ -90,11 +95,9 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
                 "'=lly')";
 
 
-        String sql = "";
-        Calendar cal = Calendar.getInstance();
-        cal.setTime( data.getCreateTime() );
-        int month = cal.get( Calendar.MONTH ) + 1;
-        /**********************************  总的收款分录  *************************************/
+        String sql;
+
+        /*---------------------  总的收款分录  -----------------------*/
         if( data.getId() == lastId ) {
             sql = String.format( sqlFormat, month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
@@ -130,21 +133,31 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
         return sql;
     }
 
+//    private String buildSummary( ExcelDataWithYingshou data, boolean isYingshou ){
+//        return data.getSummary();
+//        //以下是通过data自己生成摘要，有些问题，暂时不要
+////        String s = isYingshou ? "收" : "付";
+////        Calendar cal = Calendar.getInstance();
+////        cal.setTime( data.getPlayTime() );
+////        int month = cal.get( Calendar.MONTH ) + 1;
+////        //**BU收**月线上项目《****》款
+////        return data.getBu()+s+month+"月线上项目《"+data.getItemCode()+"》款";
+//    }
+
 
     /**
      * 写入收入的现金流量表
      *
-     * @param data
-     * @return
+     * @param data data
+     * @return sql
      */
-    private String buildCashTableWithShouru( ExcelDataWithYingshou data ){
+    private String buildCashTableWithYingShou( ExcelDataWithYingshou data ){
         Calendar cal = Calendar.getInstance();
         cal.setTime( data.getCreateTime() );
         int month = cal.get( Calendar.MONTH ) + 1;
-        String sql = "insert into GL_CashTable(iperiod,isignseq,ino_id,inid,cCashItem,md,mc) " +
-                "VALUES (" + month + ",1," + inoId + ",1,'01'," + data.getSettlementPrice() + ",0)";
 
-        return sql;
+        return "insert into GL_CashTable(iperiod,isignseq,ino_id,inid,cCashItem,md,mc) " +
+                "VALUES (" + month + ",1," + inoId + ",1,'01'," + data.getSettlementPrice() + ",0)";
     }
 
 
@@ -154,7 +167,7 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
      * @param data excel数据
      * @return \
      */
-    private String buildAccvouchSqlWithShouru( ExcelDataWithYingshou data ){
+    private String buildAccvouchSqlWithYingshou( ExcelDataWithYingshou data ){
         final SimpleDateFormat formatter = new SimpleDateFormat( "yyyy-MM-dd" );
 
         String sqlFormat = "INSERT INTO GL_accvouch" +
@@ -182,7 +195,7 @@ public class SqlServerWithYingshou extends AbstractSqlServer{
         Calendar cal = Calendar.getInstance();
         cal.setTime( data.getCreateTime() );
         int month = cal.get( Calendar.MONTH ) + 1;
-        /**********************************  总的收款分录  *************************************/
+        /*---------------------  总的收款分录  ------------------------*/
         if( data.getId() == 1 ) {
             sql = String.format( sqlFormat, month,
                     inoId, inid++, formatter.format( data.getCreateTime() ), data.getCreater(),
