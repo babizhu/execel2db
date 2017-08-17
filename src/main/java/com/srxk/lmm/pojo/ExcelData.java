@@ -106,6 +106,10 @@ public class ExcelData{
      */
      String Supplier1;
     /**
+     * 部门ID
+     */
+    String departmentId;
+    /**
      * 获取项目编码 = 出游时间+产品名称
      *
      * @return 项目编码

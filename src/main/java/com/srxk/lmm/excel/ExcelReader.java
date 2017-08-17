@@ -134,6 +134,11 @@ public class ExcelReader{
             data.setZzsDq( cells.getCell( 33 ).getNumericCellValue() );
 
         }
+
+        if( cells.getCell( 34 ) != null ) {
+            data.setDepartmentId( cells.getCell( 34 ).getStringCellValue() );
+
+        }
         return data;
     }
 
