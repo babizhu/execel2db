@@ -137,7 +137,6 @@ public class ExcelReader{
 
         if( cells.getCell( 34 ) != null ) {
             data.setDepartmentId( cells.getCell( 34 ).getStringCellValue() );
-
         }
         return data;
     }
